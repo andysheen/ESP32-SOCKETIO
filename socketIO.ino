@@ -78,6 +78,6 @@ void setupSocketIOEvents() {
   socketIO.on("event", socketIO_event);
   socketIO.on("send mac", socketIO_sendMac);
   socketIO.on("msg", socketIO_msg);
-  socketIO.begin(host, port, path);
+  socketIO.beginSSL(host, port, path,"94 FC F6 23 6C 37 D5 E7 92 78 3C 0B 5F AD 0C E4 9E FD 9E A8");
   Serial.println("attached socketio listeners");
 }

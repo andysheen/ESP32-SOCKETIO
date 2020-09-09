@@ -156,7 +156,7 @@ char host[] = "irs-socket-server.herokuapp.com"; // Socket.IO Server Address
 #else
 char host[] = "irs-socket-server-staging.herokuapp.com"; // Socket.IO Staging Server Address
 #endif
-int port = 80; // Socket.IO Port Address
+int port = 443; // Socket.IO Port Address
 char path[] = "/socket.io/?transport=websocket"; // Socket.IO Base Path
 
 void setup() {
