@@ -91,7 +91,8 @@ void handleButtonEvent(AceButton* button, uint8_t eventType, uint8_t buttonState
           } else {
             ledChanged[USERLED] = true;
             fadeRGB(USERLED);
-            socketIO_sendColour();
+           // socketIO_sendColour();
+           sendMsgMQTT();
           }
           isSelectingColour = false;
           break;
@@ -127,7 +128,8 @@ void handleTouchEvent(AceButton* button, uint8_t eventType, uint8_t buttonState)
         fadeRGB(USERLED);
         isFadingRGB[USERLED] = false;
         startLongFade(USERLED);
-        socketIO_sendColour();
+        //socketIO_sendColour();
+        sendMsgMQTT();
       }
       isSelectingColour = false;
       break;

@@ -42,6 +42,13 @@ int currentSetupStatus = setup_pending;
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
+
+//MQTT
+#include <PubSubClient.h>
+WiFiClient espClient;
+PubSubClient client(espClient);
+const char* mqtt_server = "192.168.1.56";
+
 //socketIO
 #include <SocketIoClient.h>
 /* HAS TO BE INITIALISED BEFORE WEBSOCKETSCLIENT LIB */
@@ -74,13 +81,13 @@ using namespace ace_button;
 #define FASTLONGFADE 120
 unsigned long LONGFADEMINUTESMAX = 360;
 #define LONGFADECHECKMILLIS 60000
-unsigned long  prevLongFadeVal[NUMPIXELS] = {0,0};
+unsigned long  prevLongFadeVal[NUMPIXELS] = {0, 0};
 uint8_t hue[NUMPIXELS];
 uint8_t saturation[NUMPIXELS];
 uint8_t value[NUMPIXELS];
 bool ledChanged[NUMPIXELS] = {false, false};
 unsigned long prevPixelMillis;
-bool isLongFade[NUMPIXELS]= {false,false};
+bool isLongFade[NUMPIXELS] = {false, false};
 unsigned long prevlongPixelMillis;
 unsigned long longFadeMinutes[NUMPIXELS];
 unsigned long prevLongFadeMillis[NUMPIXELS];
@@ -214,7 +221,12 @@ void setup() {
     digitalWrite(LED_BUILTIN, 0);
     connectToWifi(wifiCredentials);
     //checkForUpdate();
-    setupSocketIOEvents();
+    //  setupSocketIOEvents();
+
+    //MQTT
+    client.setServer(mqtt_server, 1883);
+    client.setCallback(callback);
+    
     currentSetupStatus = setup_finished;
     Serial.println("setup complete");
   }
@@ -261,7 +273,8 @@ void loop() {
       dnsServer.processNextRequest();
       break;
     case setup_finished:
-      socketIO.loop();
+      // socketIO.loop();
+      checkMQTT();
       ledHandler();
       rgbLedHandler();
       wifiCheck();
