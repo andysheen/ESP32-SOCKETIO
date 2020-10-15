@@ -128,22 +128,20 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 
   String mac = recMacAddress;
 
-  if (String(topic) == getRemoteMacAddress(1).c_str()) {
-    if (String(data_project) == "lighttouch") {
-      long data_hue = incomingDoc["data"]["hue"];
-      Serial.print("Light touch! Hue: ");
-      Serial.println(data_hue);
-      // TODO - Run light touch
-      hue[REMOTELED] = (uint8_t)data_hue;
-      ledChanged[REMOTELED] = true;
-      //added to enable reset of fading mid fade
-      isFadingRGB[REMOTELED] = false;
-      fadeRGB(REMOTELED);
-      startLongFade(REMOTELED);
-    }
-    else if (String(data_project) == "test") {
-      blinkDevice();
-    }
+  if (String(data_project) == "lighttouch") {
+    long data_hue = incomingDoc["data"]["hue"];
+    Serial.print("Light touch! Hue: ");
+    Serial.println(data_hue);
+    // TODO - Run light touch
+    hue[REMOTELED] = (uint8_t)data_hue;
+    ledChanged[REMOTELED] = true;
+    //added to enable reset of fading mid fade
+    isFadingRGB[REMOTELED] = false;
+    fadeRGB(REMOTELED);
+    startLongFade(REMOTELED);
+  }
+  else if (String(data_project) == "test") {
+    blinkDevice();
   }
 }
 
