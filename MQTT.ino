@@ -1,4 +1,5 @@
-void callback(char* topic, byte* message, unsigned int length) {
+/*
+  void callback(char* topic, byte* message, unsigned int length) {
 
   Serial.print("Message arrived on topic: ");
   Serial.print(topic);
@@ -41,34 +42,8 @@ void callback(char* topic, byte* message, unsigned int length) {
       }
     }
   }
-}
-
-void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    if (client.connect(WiFi.macAddress().c_str())) {
-      Serial.println("connected");
-      blinkOnConnect();
-      // Subscribe
-      client.subscribe(getRemoteMacAddress(1).c_str(), 1);
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
   }
-}
-
-void checkMQTT() {
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
-}
+*/
 
 void sendMsgMQTT() {
 
@@ -82,5 +57,108 @@ void sendMsgMQTT() {
   String sender;
   serializeJson(doc, sender);
   //  socketIO.emit("msg", sender.c_str());
-  client.publish(getRemoteMacAddress(1).c_str(), sender.c_str());
+  //client.publish(getRemoteMacAddress(1).c_str(), sender.c_str());
+
+  uint16_t packetIdPub2 = mqttClient.publish(getRemoteMacAddress(1).c_str(), 1, true, sender.c_str());
+  Serial.print("Publishing at QoS 1, packetId: ");
+  Serial.println(packetIdPub2);
+
+
+}
+
+
+void onMqttConnect(bool sessionPresent) {
+  uint16_t packetIdSub = mqttClient.subscribe(getRemoteMacAddress(0).c_str(), 1);
+  Serial.print("Subscribing at QoS 1, packetId: ");
+  Serial.println(packetIdSub);
+}
+
+void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
+  Serial.println("Disconnected from MQTT.");
+}
+
+void onMqttSubscribe(uint16_t packetId, uint8_t qos) {
+  Serial.println("Subscribe acknowledged.");
+  Serial.print("  packetId: ");
+  Serial.println(packetId);
+  Serial.print("  qos: ");
+  Serial.println(qos);
+}
+
+void onMqttUnsubscribe(uint16_t packetId) {
+  Serial.println("Unsubscribe acknowledged.");
+  Serial.print("  packetId: ");
+  Serial.println(packetId);
+}
+
+void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
+  Serial.println("Publish received.");
+  Serial.print("  topic: ");
+  Serial.println(topic);
+  Serial.print("  qos: ");
+  Serial.println(properties.qos);
+  Serial.print("  dup: ");
+  Serial.println(properties.dup);
+  Serial.print("  retain: ");
+  Serial.println(properties.retain);
+  Serial.print("  len: ");
+  Serial.println(len);
+  Serial.print("  index: ");
+  Serial.println(index);
+  Serial.print("  total: ");
+  Serial.println(total);
+
+  String messageTemp;
+
+  for (int i = 0; i < len; i++) {
+    Serial.print((char)payload[i]);
+    messageTemp += (char)payload[i];
+  }
+
+  const size_t capacity = 2 * JSON_OBJECT_SIZE(2) + 60;
+  DynamicJsonDocument incomingDoc(capacity);
+  deserializeJson(incomingDoc, messageTemp);
+  const char* recMacAddress = incomingDoc["macAddress"];
+  const char* data_project = incomingDoc["data"]["project"];
+
+  Serial.print("I got a message from ");
+  Serial.println(recMacAddress);
+  Serial.print("Which is of type ");
+  Serial.println(data_project);
+
+  String mac = recMacAddress;
+
+  if (String(topic) == getRemoteMacAddress(1).c_str()) {
+    if (String(data_project) == "lighttouch") {
+      long data_hue = incomingDoc["data"]["hue"];
+      Serial.print("Light touch! Hue: ");
+      Serial.println(data_hue);
+      // TODO - Run light touch
+      hue[REMOTELED] = (uint8_t)data_hue;
+      ledChanged[REMOTELED] = true;
+      //added to enable reset of fading mid fade
+      isFadingRGB[REMOTELED] = false;
+      fadeRGB(REMOTELED);
+      startLongFade(REMOTELED);
+    }
+    else if (String(data_project) == "test") {
+      blinkDevice();
+    }
+  }
+}
+
+void onMqttPublish(uint16_t packetId) {
+  Serial.println("Publish acknowledged.");
+  Serial.print("  packetId: ");
+  Serial.println(packetId);
+}
+
+void setUpMQTTCallbacks() {
+  mqttClient.onConnect(onMqttConnect);
+  mqttClient.onDisconnect(onMqttDisconnect);
+  mqttClient.onSubscribe(onMqttSubscribe);
+  mqttClient.onUnsubscribe(onMqttUnsubscribe);
+  mqttClient.onMessage(onMqttMessage);
+  mqttClient.onPublish(onMqttPublish);
+  mqttClient.setServer(MQTT_HOST, MQTT_PORT);
 }

@@ -44,10 +44,11 @@ int currentSetupStatus = setup_pending;
 
 
 //MQTT
-#include <PubSubClient.h>
-WiFiClient espClient;
-PubSubClient client(espClient);
-const char* mqtt_server = "192.168.1.56";
+//#include <PubSubClient.h>
+#include <AsyncMqttClient.h>
+AsyncMqttClient mqttClient;
+#define MQTT_HOST IPAddress(192, 168, 1, 56)
+#define MQTT_PORT 1883
 
 //socketIO
 #include <SocketIoClient.h>
@@ -224,8 +225,10 @@ void setup() {
     //  setupSocketIOEvents();
 
     //MQTT
-    client.setServer(mqtt_server, 1883);
-    client.setCallback(callback);
+    setUpMQTTCallbacks();
+    mqttClient.connect();
+   // client.setServer(mqtt_server, 1883);
+   // client.setCallback(callback);
     
     currentSetupStatus = setup_finished;
     Serial.println("setup complete");
@@ -274,7 +277,7 @@ void loop() {
       break;
     case setup_finished:
       // socketIO.loop();
-      checkMQTT();
+     // checkMQTT();
       ledHandler();
       rgbLedHandler();
       wifiCheck();
